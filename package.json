@@ -1,0 +1,19 @@
+{
+  "name": "jspop",
+  "version": "0.1.0",
+  "description": "Javascript Dataflow Language",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mark-hahn/jspop"
+  },
+  "keywords": [
+    "language"
+  ],
+  "author": "Mark Hahn <mark@hahnca.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mark-hahn/jspop/issues"
+  },
+  "homepage": "https://github.com/mark-hahn/jspop#readme"
+}
