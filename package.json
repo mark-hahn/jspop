@@ -1,6 +1,6 @@
 {
   "name": "popx",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "PopX Dataflow/Reactive Framework (JS for now)",
   "main": "index.js",
   "repository": {
@@ -8,7 +8,10 @@
     "url": "https://github.com/mark-hahn/popx"
   },
   "keywords": [
-    "language"
+    "reactive",
+    "dataflow",
+    "framework",
+    "javascript"
   ],
   "author": "Mark Hahn <mark@hahnca.com>",
   "license": "MIT",
