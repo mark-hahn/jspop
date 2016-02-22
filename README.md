@@ -1,6 +1,8 @@
 ## popx
 
-### A Reactive Dataflow Framework
+### A Reactive Dataflow Framework (JS for now)
+
+This is a placeholder project for a work-in-progress.  Post any questions on the [github repo](https://github.com/mark-hahn/popx).
 
 ### Notes
 - app consists of hierarchical levels
