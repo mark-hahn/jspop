@@ -1,22 +1,22 @@
-## JSPOP
+## popx
 
-### A Reactive Dataflow framework
+### A Reactive Dataflow Framework
 
 ### Notes
 - app consists of hierarchical levels
   - module nesting creates tree structure
-  - jspop modules
+  - popx modules
     - non-leaf modules
     - strictly declarative
     - creates dataflow graphs
     - sets up code module instances and runs them
-    - .jspop file format is JSON
+    - .popx file format is JSON
   - code modules
     - leaf modules
     - standard code, JS for now
     
     
-- jspop connections, aka pipes, values, wires
+- popx connections, aka pipes, values, wires
   - multiple readers and writers to single connection
   - any JS value (must be serializable with JSON)
   - change in value can trigger reaction (data-flow)
@@ -32,20 +32,20 @@
     - example is processing web pages as requests come in
 
       
-- jspop app
-  - App is tree of jspop files and inluded code modules
-  - root of app tree is always a jspop file
-  - jspop file may include other jspop files and code modules
+- popx app
+  - App is tree of popx files and inluded code modules
+  - root of app tree is always a popx file
+  - popx file may include other popx files and code modules
   - code modules can only include other code modules
 
 
-- jspop ide
+- popx ide
   - graphical display of modules
     - shows modules as boxes with "pins and wiring"
-  - single click pops open jspop or code module
-    - jspop module shown as nested graphics
+  - single click pops open popx or code module
+    - popx module shown as nested graphics
     - code module shown with normal text-based code editor
-    - jspop name comes from popping open module
+    - popx name comes from popping open module
   - runs in browser or Atom desktop editor
   - single click on connection wire shows current value
   - May single step at connection value level
@@ -53,17 +53,17 @@
   - May slow down execution to watch values as they change
 
 
-- jspop code modules
+- popx code modules
   - code modules have interaction rules
     - May call other nested code modules as usual
-    - May not call other jspop code modules
-    - May communicate through inter-module jspop connections
-    - May use jspop global namspaced connections
+    - May not call other popx code modules
+    - May communicate through inter-module popx connections
+    - May use popx global namspaced connections
   - JS version requires ES6 (babel)
     
     
-- jspop npm module provides code module access to jspop connections
-  - single jspop object, usually in variable named `$`
+- popx npm module provides code module access to popx connections
+  - single popx object, usually in variable named `$`
   - assignment to `$.varname` triggers write/event to connection `varname`
   - referencing `$.varname` reads value from connection
   - function `$.react` is called on `$.varname` input connection value change
@@ -100,7 +100,7 @@
   - reactiveX
     - api of functions
     - pure functional
-  - jspop 
+  - popx 
     - much simpler with imperative code modules
     - declarative data-flow connections
     - JS implementation only for now
