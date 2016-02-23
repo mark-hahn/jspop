@@ -4,15 +4,16 @@
 
 This is a placeholder project for a work-in-progress.  Post any questions on the [github repo](https://github.com/mark-hahn/popx).
 
-### Notes
+### Random Notes
 - app consists of hierarchical levels
   - module nesting creates tree structure
   - popx modules
+    - can be run like code module or script
     - non-leaf modules
     - strictly declarative
     - creates dataflow graphs
     - sets up code module instances and runs them
-    - .popx file format is JSON
+    - simple custom file format, similar to YAML
   - code modules
     - leaf modules
     - standard code, JS for now
@@ -107,11 +108,33 @@ This is a placeholder project for a work-in-progress.  Post any questions on the
     - declarative data-flow connections
     - JS implementation only for now
 
+### Popx Files
+  - can include shebang `#!usr/bin/env popx`
+  - purely declaritive
+  - can be edited as pure text or graphic
+  - often created/edited by the popx graphic ide
+    - when opened by ide then popx file includes layout info
+    - includes modules (boxes), connections (lines), labels, comments
 
-- Status
+### Popx file format
+  - case sensitive
+  - single-line comments are #
+  - multi-line comments are /* */
+  - supports markdown in comments
+  - data similar to yaml (but simpler)
+  - simple strings
+      - do not require quotes
+      - only chars allowed are `<space> a-z A-Z 0-9 $ _`
+      - may not include reserved words such as undefined, null, true, false
+  - simple lists
+    - do not require `[ ]`
+    - indicated by presence of commas
+      - single value followed by comma is one-element list
+
+### Status
   - Beta
   - used in production
-    - moderate-sized multi-zone HVAC app
+    - 7K-line multi-zone HVAC app
   
-  
-- MIT license
+### MIT license
+
