@@ -2,46 +2,29 @@
 
 # popx todomvc module
 
-# metadata similar to project.json
+###############
 app:
-  name:        todomvc     
-  version:     0.1.0
-  description: A todomvc example for todomvc.com
-  author:      Mark Hahn <mark@hahnca.com>
-  repository:  mark-hahn/popx-todomvc
+  name:         todomvc     
+  version:      0.1.0
+  modified:     2016-02-23 14:05 -8
+  description:  A todomvc example for todomvc.com
+  author:       Mark Hahn <mark@hahnca.com>
+  repository:   mark-hahn/popx-todomvc
 
-# included modules can be popx files or code modules (like node)
-# type not specified and can be any language (js only for now)
-# files in directories `popx_modules` and `node_modules`
+###############
 modules:
 
-  webpage:         # uses `webpage.popx` file, `webpage.js` file, or `webpage` dir
-    head:   null   # null same as not including pin 
-      
-    # direction is optional and can be specified here and/or module file
-    # comma triggers []
-    # `<` specifies input constant
-    # inline constant layout is fixed by ide
+  # readFile:
+  #   path:      < body.html
+  #   out:       bodyTemplate
+     
+  # moustache:
+  #   model:     tasksModel
+  #   template:  bodyTemplate
+  #   out:       pageBody
     
-    title:  in, < Popx TodoMVC
+  tagInput: 
+    name:      newTodoInp
+    selector: .new-todo
+    changeEvt: addTodo
     
-    # Multiline constant string (heredoc)
-    style:  in, < """      
-      .body {
-        border:           1px solid black;
-        background-color: #118;
-        border-radius:    4%;
-      }
-      .
-    """
-    body:   in 
-    html:   out
-    newtask: 
-    events: in  < newtask: '#task-input'  # constants allowed in popx file
-    # position is [x, y] in fractions (toFixed(6)) of page dimensions
-    position: .666667, .2
-
-# wire modules together
-# each connection holds a value (starts undefined)
-
-connections:

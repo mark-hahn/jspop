@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/mark-hahn/popx/issues"
   },
-  "homepage": "https://github.com/mark-hahn/popx#readme"
+  "homepage": "https://github.com/mark-hahn/popx#readme",
+  "dependencies": {
+    "commander": "^2.9.0"
+  }
 }

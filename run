@@ -1,0 +1,5 @@
+
+echo "compiling todomvc.popx"
+node js/popx.js -xco todomvc/js todomvc/todomvc.popx
+
+http-server todomvc -p 1999 -o -r

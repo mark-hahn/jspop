@@ -108,6 +108,13 @@ This is a placeholder project for a work-in-progress.  Post any questions on the
     - declarative data-flow connections
     - JS implementation only for now
 
+### Heredoc strings
+  - start and end with `"""` or `""""`
+  - indent significant
+  - indent whitespace not included
+  - Triple quotes do not include line endings
+  - Quad quotes do include line endings
+
 ### Popx Files
   - can include shebang `#!usr/bin/env popx`
   - purely declaritive
@@ -121,16 +128,57 @@ This is a placeholder project for a work-in-progress.  Post any questions on the
   - single-line comments are #
   - multi-line comments are /* */
   - supports markdown in comments
-  - data similar to yaml (but simpler)
-  - simple strings
-      - do not require quotes
-      - only chars allowed are `<space> a-z A-Z 0-9 $ _`
-      - may not include reserved words such as undefined, null, true, false
-  - simple lists
-    - do not require `[ ]`
-    - indicated by presence of commas
-      - single value followed by comma is one-element list
+  - may include only modules (boxes), wires (lines), and constants
+  
+  - modules
+    - module key is directory or file name without `.js` or `.popx`
+    - properties
+      - key is name of IO pin
+        - pin name must match pin defined in module source
+      - value
+        - name of wire or `<` inline constant
+        - missing value means wire name is same as pin name
+      - reserved keys
+        - *instance:* Name of module instance
+          - if no instance key then instance name is module name
+          
+  - constants
+    - key is wire name
+    - inline constant connected to single pin needs no wire name
 
+
+    - simple strings
+        - do not require quotes
+        - only chars allowed are `<space> a-z A-Z 0-9 $ _`
+        - may not include reserved words such as undefined, null, true, false
+        
+        
+    - simple lists
+      - do not require `[ ]`
+      - indicated by presence of commas
+        - single value followed by comma is one-element list
+
+  - wires
+    - connections between modules (and constants)
+    - each wire always has a single JS value
+      - at start, wire value is undefined
+      - takes on value when sent from module pin
+      - pin may send same value (events)
+    - each may have multiple senders and receivers
+      - one module pin may both send and recieve
+      - value is always last written, not deterministic
+    - wires may cross process and cpus
+      - value is serialized with JSON
+      - wire is masterless
+        - server is same as client
+
+  - conventions
+    - CSS and HTML for app stored in popx file constants
+    - when single-driver, wire names match module pin names
+          
+          
+    
+    
 ### Status
   - Beta
   - used in production
