@@ -11,7 +11,8 @@
     "reactive",
     "dataflow",
     "framework",
-    "javascript"
+    "javascript",
+    "popx"
   ],
   "author": "Mark Hahn <mark@hahnca.com>",
   "license": "MIT",
