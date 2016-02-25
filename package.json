@@ -20,7 +20,14 @@
     "url": "https://github.com/mark-hahn/popx/issues"
   },
   "homepage": "https://github.com/mark-hahn/popx#readme",
+  "jshintConfig": {
+    "esversion": 6,
+    "evil": true,
+    "loopfunc": true
+  },
   "dependencies": {
-    "commander": "^2.9.0"
+    "commander": "^2.9.0",
+    "js-yaml": "^3.5.3",
+    "moment": "^2.11.2"
   }
 }
