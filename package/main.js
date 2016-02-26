@@ -5,11 +5,11 @@ deepFreeze = require('deep-freeze');
 (_=>{
   'use strict';
 
-  wires = {};
-  reacts = {};
+  let wires = {};
+  let reacts = {};
   
-  setOrEmit = (self, pinName, val, event) => {
-    wireName = self.module.pins[pinName];
+  let setOrEmit = (self, pinName, val, event) => {
+    let wireName = self.module.pins[pinName];
     if (!wireName) utils.fatal(`invalid set pin ${pinName} in module ${self.name}`);
     let wire = wires[wireName];
     if (event) {
@@ -21,7 +21,9 @@ deepFreeze = require('deep-freeze');
       wire.changed = true;
     }
     wire.val = deepFreeze(val);
-    for (let [pinName, cb] of reacts[wireName]) cb(pinName, wireName, wire);
+    for (let pinCb of reacts[wireName]) {
+      setTimeout((_=> pinCb[1](pinCb[0], wireName, wire)), 0);
+    }
   };
   
   module.exports = class Popx {
@@ -30,13 +32,12 @@ deepFreeze = require('deep-freeze');
       this.name   = name;
       this.module = module;
       for (let pin in module.pins) {
-        wireName = module.pins[pin];
+        let wireName = module.pins[pin];
         if (!wires[wireName]) wires[wireName] = {val: null};
       }
     }
     
     react (pinNames, cb) {
-      console.log('react', pinNames, cb);
       if (pinNames === '*') {
         for (let pinName in this.module.pins)  {
           let wireName = this.module.pins[pinName];
@@ -57,17 +58,17 @@ deepFreeze = require('deep-freeze');
     
     get (pinName) {
       let wireName = this.module.pins[pinName];
-      return {wireName, val: wires[wireName].val};
+      let wire = wires[wireName], val;
+      if (wire) val = wire.val;
+      return {wireName, val};
     }
     
     set (pinName, val) {
-      console.log('set', pinName, val);
-      setOrEmit(this, pinName, val, no);
+      setOrEmit(this, pinName, val, false);
     }
     
     emit (pinName, val) {
-      console.log('emit', pinName, val);
-      setOrEmit(this, pinName, val, yes);
+      setOrEmit(this, pinName, val, true);
     }
   };
 })();
