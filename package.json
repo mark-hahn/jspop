@@ -1,6 +1,6 @@
 {
   "name": "popx",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "NPM package to provide pins to popx code modules",
   "main": "package/main.js",
   "repository": {
