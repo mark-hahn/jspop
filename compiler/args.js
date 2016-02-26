@@ -1,18 +1,13 @@
 
-var opts = require('commander');
+var commander = require('commander');
 
-(_=>{
-  'use strict';
-  module.exports = opts
-    .version('0.1.0')
-    .usage('[options] <popxfile ...>')
-    .option('-c, --compile', 'Compile popx file(s)')
-    .option('-o, --output-folder [path]', 'Output Path')
-    .parse(process.argv);
+commander
+  .version('0.1.0')
+  .usage('[options] popxfile')
+  .option('-c, --compile', 'Compile popx file(s)')
+  .option('-b, --browersify', 'Run BrowserifY On Output')
+  .option('-p, --browersify-path [bPath]', 'Browserify Output File')
+  .option('-o, --output-folder [outFolder]', 'Output Folder Path')
+  .parse(process.argv);
 
-  // console.log({
-  //   compile: opts.compile, 
-  //   outPath: opts.outputFolder, 
-  //   inFiles: opts.args
-  // });
-})();
+module.exports = commander;

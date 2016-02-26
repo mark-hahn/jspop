@@ -22,8 +22,7 @@
   "homepage": "https://github.com/mark-hahn/popx#readme",
   "jshintConfig": {
     "esversion": 6,
-    "evil": true,
-    "loopfunc": true
+    "evil": true
   },
   "dependencies": {
     "commander": "^2.9.0",

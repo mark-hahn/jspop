@@ -10,15 +10,15 @@ var utils = require('./utils');
     try { doc = yaml.load(source); }
     catch (e) { utils.fatal(`syntax (yaml): ${file}, ${e.message}`); }    
     let constIdx = 0;
-    let modules  = {};
+    let modules  = [];
     let moduleByConstValue = {};
     
     if (!doc.modules) utils.fatal(`no modules found in file ${file}`);
     
-    for (let moduleName in doc.modules) {
-      let moduleIn = doc.modules[moduleName];
-      let module = modules[moduleName] = 
-         {module: (moduleIn.$module ? moduleIn.$module : moduleName)};
+    for (let modName in doc.modules) {
+      let moduleIn = doc.modules[modName];
+      let module = {name:modName, type: (moduleIn.$require ? moduleIn.$require : modName)};
+      modules.unshift(module);
       if (moduleIn.$state) module.state = moduleIn.$state;
       
       let pins = {};
@@ -47,7 +47,9 @@ var utils = require('./utils');
             wireName = constModule.pins.out;
           } else {
             wireName = `_const${constIdx++}`;
-            constModule = {module: 'stdlib/constant', state: constVal, pins: {out: wireName}};
+            constModule = {name:wireName, type: 'constant', 
+                          state: constVal, pins: {out: wireName}};
+            modules.push(constModule);
             moduleByConstValue[jsonConstVal] = constModule;
           }
         }
@@ -57,11 +59,7 @@ var utils = require('./utils');
       }
       module.pins = pins;
     }
-    for (let constValue in moduleByConstValue) {
-      let constModule = moduleByConstValue[constValue];
-      modules[constModule.pins.out] = constModule;
-    }
-    return {appInfo: doc.app, env: {modules}};
+    return {project: doc.project, env: {modules}};
   };
   
 })();
