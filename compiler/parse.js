@@ -5,29 +5,29 @@ var utils = require('./utils');
 (_=>{
   'use strict';
   
-  module.exports = (source) => {
+  module.exports = (file, source) => {
     let doc;
     try { doc = yaml.load(source); }
-    catch (e) { utils.fatal(`popx syntax (yaml): ${file}, ${e.message}`); }    
-    let modulesByWire = doc.wires || {};
+    catch (e) { utils.fatal(`syntax (yaml): ${file}, ${e.message}`); }    
     let constIdx = 0;
+    let modules  = {};
+    let wires    = {};
     let moduleByConstValue = {};
     
-    if (!doc.modules)
-      utils.fatal(`no modules found in file ${file}`);
-            
+    if (!doc.modules) utils.fatal(`no modules found in file ${file}`);
+    
     for (let moduleName in doc.modules) {
-      let module = doc.modules[moduleName];
-      let moduleFileName = (module.$module ? module.$module : moduleName);
-      delete module.$module;
-      let moduleState = module.$state;
-      delete module.$state;
+      let moduleIn = doc.modules[moduleName];
+      let module = modules[moduleName] = 
+         {module: (moduleIn.$module ? moduleIn.$module : moduleName)};
+      if (moduleIn.$state) module.state = moduleIn.$state;
       
-      let pins = [];
-      for (let pin in module) {
-        let pinVal = module[pin], wire, constVal;
+      let pins = {};
+      for (let pinName in moduleIn) {
+        if(pinName.slice(0,1) === '$') continue;
+        let pinVal = moduleIn[pinName], wireName, constVal;
         if (pinVal === null || pinVal === undefined) {
-          wire = pin;
+          wireName = pinName;
         } else if (typeof pinVal !== 'string') {
           constVal = pinVal;
         } else {
@@ -37,34 +37,33 @@ var utils = require('./utils');
             try { constVal = eval(constStr); } 
             catch (e) {constVal = constStr;}
           } else {
-            wire = pinVal;
+            wireName = pinVal;
           }
         }
-        if (constVal) {
+        if (constVal !== undefined && constVal !== null) {
           let jsonConstVal = JSON.stringify(constVal);
           let constModule;
           if (moduleByConstValue[jsonConstVal]) {
             constModule = moduleByConstValue[jsonConstVal];
-            wire = constModule.out;
+            wireName = constModule.pins.out;
           } else {
-            wire = `__const${constIdx++}`;
-            constModule = {$module: 'constant', $state: constVal, out: wire};
+            wireName = `_const${constIdx++}`;
+            constModule = {module: 'stdlib/constant', state: constVal, pins: {out: wireName}};
             moduleByConstValue[jsonConstVal] = constModule;
-            doc.modules[wire] = constModule;
-            modulesByWire[wire] = [constModule];
           }
         }
-        if (wire) {
-          if (!modulesByWire[wire]) modulesByWire[wire] = [];
-          modulesByWire[wire].push(module);
-          module[pin] = wire;
+        if (wireName) {
+          pins[pinName] = {name: wireName};
+          wires[wireName] = {val:null};
         }
       }
-      module.$module = moduleFileName;
-      if (moduleState !== undefined && moduleState !== null) 
-        module.$state = moduleState;
+      module.pins = pins;
     }
-    return {appInfo: doc.app, modulesByName: doc.modules, modulesByWire};
+    for (let constValue in moduleByConstValue) {
+      let constModule = moduleByConstValue[constValue];
+      modules[constModule.pins.out] = constModule;
+    }
+    return {appInfo: doc.app, env: {modules, wires}};
   };
   
 })();
