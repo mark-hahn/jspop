@@ -41,7 +41,7 @@ var utils  = require('./utils');
           out += `  let stdlibPath = require("popx-stdlib");\n`;
           haveStdlibRequire = true;
         }
-        out += `  new(require(${module}"))(env, env.modules.${moduleName});\n`;
+        out += `  new(require(${module}"))(env, "${moduleName}", env.modules.${moduleName});\n`;
       }
       out += `})();\n`;
       fs.writeFileSync(`${outputFolder}/${path.parse(file).name}.js`, out); 

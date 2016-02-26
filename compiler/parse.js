@@ -11,7 +11,6 @@ var utils = require('./utils');
     catch (e) { utils.fatal(`syntax (yaml): ${file}, ${e.message}`); }    
     let constIdx = 0;
     let modules  = {};
-    let wires    = {};
     let moduleByConstValue = {};
     
     if (!doc.modules) utils.fatal(`no modules found in file ${file}`);
@@ -53,8 +52,7 @@ var utils = require('./utils');
           }
         }
         if (wireName) {
-          pins[pinName] = {name: wireName};
-          wires[wireName] = {val:null};
+          pins[pinName] = wireName;
         }
       }
       module.pins = pins;
@@ -63,7 +61,7 @@ var utils = require('./utils');
       let constModule = moduleByConstValue[constValue];
       modules[constModule.pins.out] = constModule;
     }
-    return {appInfo: doc.app, env: {modules, wires}};
+    return {appInfo: doc.app, env: {modules}};
   };
   
 })();
