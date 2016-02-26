@@ -46,8 +46,8 @@ var utils = require('./utils');
             constModule = moduleByConstValue[jsonConstVal];
             wireName = constModule.pins.out;
           } else {
-            wireName = `_const${constIdx++}`;
-            constModule = {name:wireName, type: 'constant', 
+            wireName = `$const${constIdx++}`;
+            constModule = {name:wireName, type: '$constant', 
                           state: constVal, pins: {out: wireName}};
             modules.push(constModule);
             moduleByConstValue[jsonConstVal] = constModule;

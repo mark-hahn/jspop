@@ -26,7 +26,7 @@ deepFreeze = require('deep-freeze');
         }
         return;
       }
-      let pinNameList = pinNames.split(/[^a-z0-9_]/g);
+      let pinNameList = pinNames.split(/[\s,;:]/g);
       for (let pinName of pinNameList) {
         if(!pinName) continue;
         let wireName = this.module.pins[pinName];
@@ -59,7 +59,7 @@ deepFreeze = require('deep-freeze');
       for (let pinCb of reacts[wireName]) {
         ((pinCb) => {
           setTimeout((_=> pinCb[1](wire.val, pinCb[0], 
-                                  {wireName, event, senderName:this.module.name, senderPin:pinName})), 0);
+            {wireName, event, senderName:this.module.name, senderPin:pinName})), 0);
         })(pinCb);
       }
     }
