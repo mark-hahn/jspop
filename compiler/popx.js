@@ -18,9 +18,13 @@ var utils      = require('./utils');
   if (opts.browserify) {
     let stdlibPaths = [];
     for (let module of parsedData.env.modules) {
-      if (module.type[0] === '$') stdlibPaths.push(stdlibPath + module.type);
+      if (module.type[0] === '$') 
+        stdlibPaths.push(stdlibPath + module.type);
     }
-    let b = browserify(outFile);
+    let browserifyOpts = {};
+    console.log(stdlibPaths);
+    if (opts.browserifyMap) browserifyOpts.debug = true;
+    let b = browserify(outFile,browserifyOpts);
     b.require(stdlibPaths);
     b.bundle( (err, buf) => {
       if(err) utils.fatal(`Browserify: ${err.message}`);
