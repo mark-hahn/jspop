@@ -1,7 +1,6 @@
 
 var fs         = require('fs');
 var browserify = require('browserify');
-var stdlibPath = require('popx-stdlib');
 var opts       = require('./args');
 var parse      = require('./parse');
 var output     = require('./output');
@@ -16,16 +15,10 @@ var utils      = require('./utils');
   let parsedData = parse(file, source);
   let outFile = output(file, parsedData);
   if (opts.browserify) {
-    let stdlibPaths = [];
-    for (let module of parsedData.env.modules) {
-      if (module.type[0] === '$') 
-        stdlibPaths.push(stdlibPath + module.type);
-    }
     let browserifyOpts = {};
-    console.log(stdlibPaths);
     if (opts.browserifyMap) browserifyOpts.debug = true;
     let b = browserify(outFile,browserifyOpts);
-    b.require(stdlibPaths);
+    // b.require(stdlibPaths);
     b.bundle( (err, buf) => {
       if(err) utils.fatal(`Browserify: ${err.message}`);
       let bundlePath = (opts.browserifyPath ? opts.browserifyPath : 'bundle.js');

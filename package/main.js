@@ -22,7 +22,7 @@ deepFreeze = require('deep-freeze');
         for (let pinName in this.module.pins)  {
           let wireName = this.module.pins[pinName];
           if (!reacts[wireName]) reacts[wireName] = [];
-          reacts[wireName].push([pinName,cb]);
+          reacts[wireName].push([this, pinName, cb]);
         }
         return;
       }
@@ -32,7 +32,7 @@ deepFreeze = require('deep-freeze');
         let wireName = this.module.pins[pinName];
         if(!wireName) utils.fatal(`invalid react pin ${pinName} in module ${this.module.name}`);
         if (!reacts[wireName]) reacts[wireName] = [];
-        reacts[wireName].push([pinName,cb]);
+        reacts[wireName].push([this, pinName, cb]);
       }
     }
     
@@ -56,16 +56,17 @@ deepFreeze = require('deep-freeze');
         wire.changed = true;
       }
       wire.val = deepFreeze(val);
-      for (let pinCb of reacts[wireName]) {
-        ((pinCb) => {
-          setTimeout((_=> pinCb[1](wire.val, pinCb[0], 
-            {wireName, event, senderName:this.module.name, senderPin:pinName})), 0);
-        })(pinCb);
+      for (let react of reacts[wireName]) {
+        (react =>
+          setTimeout((_=>
+            react[2].call(react[0], wire.val, react[1], 
+              {wireName, event, senderName:this.module.name, senderPin:pinName})) , 0)
+        )(react);
       }
     }
     
     emit (pinName, val) {
-      this.setOrEmit(pinName, val, true);
+      this.set(pinName, val, true);
     }
   };
 })();

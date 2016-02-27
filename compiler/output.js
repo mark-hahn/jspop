@@ -4,41 +4,31 @@ var util   = require('util');
 var path   = require('path');
 var moment = require('moment');
 var opts   = require('./args');
+var stdlib = require('popx-stdlib');
 
 ( _=> {
   "use strict";
   module.exports = (file, parsedData) => {
+    let stdlibModulesIncluded = {};
     let outputFolder = opts.outputFolder || '.';
     let project = parsedData.project;
     project.file = file;
     project.compiled = moment().format().slice(0,-6).replace('T',' ');
-    var out = `/*${util.inspect(project)}*/\n\n`;
-    // let envJSON = JSON.stringify(parsedData.env);
-    // let regex = new RegExp(',"','g');
-    // regex.lastIndex = 60;
-    // let env = '';
-    // while(regex.exec(envJSON)) {
-    //   env += '  ' + envJSON.slice(0, regex.lastIndex-1) + "\n";
-    //   envJSON = '"' + envJSON.slice(regex.lastIndex);
-    //   regex.lastIndex = 70;
-    // }
-    // env += '  ' + envJSON;
-    // out += `var env = JSON.parse(\`\n${env}\`);\n`;
+    var out = `/*${util.inspect(project)}*/\n\nvar Popx = require('popx');\n`;
     for (let module of parsedData.env.modules) {
       if (module.type.slice(0,1) === '$') {
-        out += `var stdlib = require("popx-stdlib");\n`;
-        break;
+        if (!stdlibModulesIncluded[module.type]) {
+          stdlibModulesIncluded[module.type] = true;
+          out += stdlib(module.type);
+        }
       }
     }
+    out += '\n';
     for (let module of parsedData.env.modules) {
-      let path = `"${module.type}"`;
-      if (module.type.slice(0,1) === '$') path = `stdlib(${path})`;
-      out += `new(require(${path}))(${JSON.stringify(module)});\n`;
+      let klass = (module.type.slice(0,1) === '$' ? 
+                   module.type : `require("${module.type}")`);
+      out += `new(${klass})(${JSON.stringify(module)});\n`;
     }
-    // out += `for (var mod of env.modules) {\n`;
-    // out += `  path = (mod.type[0] === '$' ? stdlibPath + mod.type : mode.type);\n`;
-    // out += `  new(require(path))(mod);\n`;
-    // out += `}\n`;
     let outFile = `${outputFolder}/${path.parse(file).name}.js`;
     fs.writeFileSync(outFile, out);
     return  outFile;
