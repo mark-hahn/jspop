@@ -23,12 +23,13 @@ var stdlib = require('popx-stdlib');
         }
       }
     }
-    out += '\n';
+    out += '\nvar mods = [];\n';
     for (let module of parsedData.env.modules) {
       let klass = (module.type.slice(0,1) === '$' ? 
                    module.type : `require("${module.type}")`);
-      out += `new(${klass})(${JSON.stringify(module)});\n`;
+      out += `mods.push(new(${klass})(${JSON.stringify(module)}));\n`;
     }
+    out += 'Popx.runLoop(mods);\n';
     let outFile = `${outputFolder}/${path.parse(file).name}.js`;
     fs.writeFileSync(outFile, out);
     return  outFile;

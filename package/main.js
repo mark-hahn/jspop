@@ -28,12 +28,12 @@ reactsByWires = {};
     }
     react (pinNames, cb) {
       if (pinNames === '*') {
-        for (let pinName in this.module.pins) addReact(pinName, cb);
+        for (let pinName in this.module.pins) this.addReact(pinName, cb);
       } else {
         let pinNameList = pinNames.split(/[\s,;:]/g);
         for (let pinName of pinNameList) {
           pinName = pinName.replace(/\s/g,'');
-          if(pinName) addReact(pinName, cb);
+          if(pinName) this.addReact(pinName, cb);
         }
       }
     }
@@ -52,7 +52,7 @@ reactsByWires = {};
         while (otherQueueLen && !otherQueue[otherQueueLen-1].event) {
           otherQueue.length = --otherQueueLen;
         }
-        let sentFrom = {module: this.module.name, pinName: pinName, event};
+        let sentFrom = {module: this.module.name, pinName: pinName, event, wireName};
         otherQueue.push(Object.assign({}, react, {val, sentFrom}));
         other.bumpTotalQueueLen(otherQueueLen - origOtherQueueLen);
       }
@@ -65,18 +65,33 @@ reactsByWires = {};
     }
     run () {
       if (this.totalQueueLen === 0) return;
+      let ran = false;
       for (let pinName in this.pinQueues) {
-        for (let setReact of this.pinQueues[pinName]) {
+        let queue = this.pinQueues[pinName];
+        while (queue.length) {
+          let setReact = shift(queue);
+          this.totalQueueLen--;
           let val = setReact.val;
           let oldVal = this.pinValues[pinName];
           let sentFrom = setReact.sentFrom;
           this.pinValues[pinName] = val;
           setReact.cb.call(this, pinName, val, oldVal, sentFrom);
-          this.totalQueueLen--;
+          ran = yes;
         }
-        this.pinQueues[pinName] = [];
       }
-      return true;
+      return ran;
+    }
+    static runLoop (moduleInstances) {
+      let numModules = moduleInstances.length;
+      if (numModules === 0) return;
+      let moduleRunningIdx = 0;
+      let runOne = (_=> {
+        let module = moduleInstances[moduleRunningIdx];
+        moduleRunningIdx = (moduleRunningIdx + 1) % numModules;
+        if (module.run() || moduleRunningIdx === 0) setTimeout(runOne, 0);
+        else runOne();
+      });
+      runOne();
     }
   };
 })();
