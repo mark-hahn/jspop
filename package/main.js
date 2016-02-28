@@ -2,71 +2,82 @@
 utils      = require('../compiler/utils');
 deepFreeze = require('deep-freeze');
 
+reactsByWires = {};
+
 (_=>{
   'use strict';
 
-  let wires = {};
-  let reacts = {};
-  
   module.exports = class Popx {
     constructor (module) {
-      this.module = module;
-      for (let pin in module.pins) {
-        let wireName = module.pins[pin];
-        if (!wires[wireName]) wires[wireName] = {val: null};
-      }
+      this.module        = module;
+      this.pinQueues     = {};
+      this.pinValues     = {};
+      this.totalQueueLen = 0;
     }
-    
+    getWireName (pinName, call) {
+      let wireName = this.module.pins[pinName];
+      if(!wireName) utils.fatal(
+          `invalid pin ${pinName} in ${call} call from module ${this.module.name}`);
+      return wireName;
+    }
+    addReact (pinName, cb) {
+      let wireName = this.getWireName(pinName, 'react');
+      if (!reactsByWires[wireName]) reactsByWires[wireName] = [];
+      if (!this.pinQueues[pinName]) this.pinQueues[pinName] = [];
+      reactsByWires[wireName].push({module: this, pinName, cb});
+    }
     react (pinNames, cb) {
       if (pinNames === '*') {
-        for (let pinName in this.module.pins)  {
-          let wireName = this.module.pins[pinName];
-          if (!reacts[wireName]) reacts[wireName] = [];
-          reacts[wireName].push([this, pinName, cb]);
-        }
-        return;
-      }
-      let pinNameList = pinNames.split(/[\s,;:]/g);
-      for (let pinName of pinNameList) {
-        if(!pinName) continue;
-        let wireName = this.module.pins[pinName];
-        if(!wireName) utils.fatal(`invalid react pin ${pinName} in module ${this.module.name}`);
-        if (!reacts[wireName]) reacts[wireName] = [];
-        reacts[wireName].push([this, pinName, cb]);
-      }
-    }
-    
-    get (pinName) {
-      let wireName = this.module.pins[pinName];
-      let wire = wires[wireName], val;
-      if (wire) val = wire.val;
-      return {wireName, val};
-    }
-    
-    set (pinName, val, event) {
-      let wireName = this.module.pins[pinName];
-      if (!wireName) utils.fatal(`invalid set pin ${pinName} in module ${this.module.name}`);
-      let wire = wires[wireName];
-      if (event) {
-        delete wire.changed;
-        wire.event = true;
+        for (let pinName in this.module.pins) addReact(pinName, cb);
       } else {
-        if (wire.val === val) return;
-        delete wire.event;
-        wire.changed = true;
-      }
-      wire.val = deepFreeze(val);
-      for (let react of reacts[wireName]) {
-        (react =>
-          setTimeout((_=>
-            react[2].call(react[0], wire.val, react[1], 
-              {wireName, event, senderName:this.module.name, senderPin:pinName})) , 0)
-        )(react);
+        let pinNameList = pinNames.split(/[\s,;:]/g);
+        for (let pinName of pinNameList) {
+          pinName = pinName.replace(/\s/g,'');
+          if(pinName) addReact(pinName, cb);
+        }
       }
     }
-    
+    get (pinName) {
+      this.getWireName(pinName, 'get');
+      return this.pinValues[pinName];
+    }
+    set (pinName, val, event) {
+      let wireName = this.getWireName(pinName, 'set');
+      val = deepFreeze(val);
+      for (let react of reactsByWires[wireName]) {
+        let other = react.module;
+        let otherQueue = other.pinQueues[react.pinName];
+        let otherQueueLen = otherQueue.length;
+        let origOtherQueueLen = otherQueueLen;
+        while (otherQueueLen && !otherQueue[otherQueueLen-1].event) {
+          otherQueue.length = --otherQueueLen;
+        }
+        let sentFrom = {module: this.module.name, pinName: pinName, event};
+        otherQueue.push(Object.assign({}, react, {val, sentFrom}));
+        other.bumpTotalQueueLen(otherQueueLen - origOtherQueueLen);
+      }
+    }
     emit (pinName, val) {
       this.set(pinName, val, true);
     }
+    bumpTotalQueueLen (bump) { 
+      this.totalQueueLen += bump; 
+    }
+    run () {
+      if (this.totalQueueLen === 0) return;
+      for (let pinName in this.pinQueues) {
+        for (let setReact of this.pinQueues[pinName]) {
+          let val = setReact.val;
+          let oldVal = this.pinValues[pinName];
+          let sentFrom = setReact.sentFrom;
+          this.pinValues[pinName] = val;
+          setReact.cb.call(this, pinName, val, oldVal, sentFrom);
+          this.totalQueueLen--;
+        }
+        this.pinQueues[pinName] = [];
+      }
+      return true;
+    }
   };
 })();
+
