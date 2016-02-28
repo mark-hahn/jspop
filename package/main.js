@@ -38,7 +38,6 @@ reactsByWires = {};
       }
     }
     get (pinName) {
-      this.getWireName(pinName, 'get');
       return this.pinValues[pinName];
     }
     set (pinName, val, event) {
@@ -54,7 +53,7 @@ reactsByWires = {};
         }
         let sentFrom = {module: this.module.name, pinName: pinName, event, wireName};
         otherQueue.push(Object.assign({}, react, {val, sentFrom}));
-        other.bumpTotalQueueLen(otherQueueLen - origOtherQueueLen);
+        other.bumpTotalQueueLen(otherQueueLen + 1 - origOtherQueueLen);
       }
     }
     emit (pinName, val) {
@@ -69,14 +68,14 @@ reactsByWires = {};
       for (let pinName in this.pinQueues) {
         let queue = this.pinQueues[pinName];
         while (queue.length) {
-          let setReact = shift(queue);
+          let setReact = queue.shift();
           this.totalQueueLen--;
           let val = setReact.val;
           let oldVal = this.pinValues[pinName];
           let sentFrom = setReact.sentFrom;
           this.pinValues[pinName] = val;
           setReact.cb.call(this, pinName, val, oldVal, sentFrom);
-          ran = yes;
+          ran = true;
         }
       }
       return ran;
