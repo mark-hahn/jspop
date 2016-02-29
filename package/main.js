@@ -13,6 +13,11 @@ reactsByWires = {};
       this.pinQueues     = {};
       this.pinValues     = {};
       this.totalQueueLen = 0;
+      if (module.constants) {
+        for (let pinName in module.constants) {
+          this.pinValues[pinName] = module.constants[pinName];
+        }
+      }
     }
     getWireName (pinName, call) {
       let wireName = this.module.pins[pinName];

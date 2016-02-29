@@ -1,4 +1,5 @@
 
+var util  = require('util');
 var yaml  = require('js-yaml');
 var utils = require('./utils');
 
@@ -9,52 +10,31 @@ var utils = require('./utils');
     let doc;
     try { doc = yaml.load(source); }
     catch (e) { utils.fatal(`syntax (yaml): ${file}, ${e.message}`); }    
-    let constIdx = 0;
+    // console.log(util.inspect(doc, {depth:null}));
+
     let modules  = [];
-    let moduleByConstValue = {};
-    
     if (!doc.modules) utils.fatal(`no modules found in file ${file}`);
     
     for (let modName in doc.modules) {
       let moduleIn = doc.modules[modName];
-      let module = {name:modName, type: (moduleIn.$require ? moduleIn.$require : modName)};
-      modules.unshift(module);
-      if (moduleIn.$state) module.state = moduleIn.$state;
+      let module = {name:modName, type: (moduleIn.$module ? moduleIn.$module : modName)};
+      delete moduleIn.$module;
+      modules.push(module);
       
       let pins = {};
       for (let pinName in moduleIn) {
-        if(pinName.slice(0,1) === '$') continue;
-        let pinVal = moduleIn[pinName], wireName, constVal;
+        let pinVal = moduleIn[pinName], constVal;
         if (pinVal === null || pinVal === undefined) {
-          wireName = pinName;
-        } else if (typeof pinVal !== 'string') {
-          constVal = pinVal;
+          pins[pinName] = pinName;
+        } else if (Array.isArray(pinVal)) {
+          if (!module.constants) module.constants = {};
+          module.constants[pinName] = pinVal[0];
         } else {
-          let match = (/^\s*<\s+(.*)$/).exec(pinVal);
-          if (match) {
-            let constStr = match[1];
-            try { constVal = eval(constStr); } 
-            catch (e) {constVal = constStr;}
-          } else {
-            wireName = pinVal;
-          }
-        }
-        if (constVal !== undefined && constVal !== null) {
-          let jsonConstVal = JSON.stringify(constVal);
-          let constModule;
-          if (moduleByConstValue[jsonConstVal]) {
-            constModule = moduleByConstValue[jsonConstVal];
-            wireName = constModule.pins.out;
-          } else {
-            wireName = `$const${constIdx++}`;
-            constModule = {name:wireName, type: '$constant', 
-                          state: constVal, pins: {out: wireName}};
-            modules.push(constModule);
-            moduleByConstValue[jsonConstVal] = constModule;
-          }
-        }
-        if (wireName) {
-          pins[pinName] = wireName;
+          if (typeof pinVal !== 'string') utils.fatal(
+              `pin value "${pinVal}" for pin ${pinName} in module ${modName} is not array or string.`);
+          if (/\W/.test(pinVal)) utils.fatal(
+              `wire name "${pinVal}" for pin ${pinName} in module ${modName} has invalid character`);
+          pins[pinName] = pinVal;
         }
       }
       module.pins = pins;
