@@ -21,23 +21,24 @@ var utils = require('./utils');
       delete moduleIn.$module;
       modules.push(module);
       
-      let pins = {};
+      let wireByPin = {};
+      let constByPin = {};
       for (let pinName in moduleIn) {
-        let pinVal = moduleIn[pinName], constVal;
+        let pinVal = moduleIn[pinName];
         if (pinVal === null || pinVal === undefined) {
-          pins[pinName] = pinName;
+          wireByPin[pinName] = pinName;
         } else if (Array.isArray(pinVal)) {
-          if (!module.constants) module.constants = {};
-          module.constants[pinName] = pinVal[0];
+          constByPin[pinName] = pinVal[0];
         } else {
           if (typeof pinVal !== 'string') utils.fatal(
               `pin value "${pinVal}" for pin ${pinName} in module ${modName} is not array or string.`);
           if (/\W/.test(pinVal)) utils.fatal(
               `wire name "${pinVal}" for pin ${pinName} in module ${modName} has invalid character`);
-          pins[pinName] = pinVal;
+          wireByPin[pinName] = pinVal;
         }
       }
-      module.pins = pins;
+      module.wireByPin = wireByPin;
+      module.constByPin = constByPin;
     }
     return {project: doc.project, env: {modules}};
   };
