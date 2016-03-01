@@ -102,7 +102,7 @@ reactsByWires = {};
           try { pinQueueItem.cb.call(this, pinName, value, pinQueueItem.data); }
           catch (err) { 
             this.log('Exception thrown:', err.message);
-            if (err.fatal) process.exit(1); 
+            if (err.fatal && Popx.inNode()) process.exit(1); 
           }
         }
       }
