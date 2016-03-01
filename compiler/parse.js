@@ -28,6 +28,8 @@ var utils = require('./utils');
         if (pinVal === null || pinVal === undefined) {
           wireByPin[pinName] = pinName;
         } else if (Array.isArray(pinVal)) {
+          if (pinVal.length > 1 && pinVal[0] === 'file')
+              pinVal[0] = fs.readFileSync(pinVal[1], 'utf8');
           constByPin[pinName] = pinVal[0];
         } else {
           if (typeof pinVal !== 'string') utils.fatal(
