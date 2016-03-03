@@ -17,7 +17,7 @@ var utils = require('./utils');
     
     for (let modName in doc.modules) {
       let moduleIn = doc.modules[modName];
-      let module = {name:modName, type: (moduleIn.$module ? moduleIn.$module : modName)};
+      let module = {name:modName, type: (moduleIn.$module ? moduleIn.$module[0] : modName)};
       delete moduleIn.$module;
       modules.push(module);
       

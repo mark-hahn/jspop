@@ -18,7 +18,6 @@ var utils      = require('./utils');
     let browserifyOpts = {};
     if (opts.browserifyMap) browserifyOpts.debug = true;
     let b = browserify(outFile,browserifyOpts);
-    // b.require(stdlibPaths);
     b.bundle( (err, buf) => {
       if(err) utils.fatal(`Browserify: ${err.message}`);
       let bundlePath = (opts.browserifyPath ? opts.browserifyPath : 'bundle.js');

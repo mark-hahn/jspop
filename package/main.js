@@ -41,7 +41,7 @@ reactsByWires = {};
         if (isEvent) meta.cb = react.cb;
         else {
           wireValue[wireName] = value;
-          for (value of otherQueue) if (typeof value === 'function') continue reactLoop;
+          for (value of otherQueue) if (value === cb) continue reactLoop;
           value = cb;
         }
         otherQueue.push(value);
@@ -66,7 +66,7 @@ reactsByWires = {};
     }
     getInstancePins () {
       let iPins = [];
-      for (let pinName of this.module.wireByPin) 
+      for (let pinName in this.module.wireByPin) 
           if (this.isInstancePin(pinName)) iPins.push(pinName);
       return iPins; 
     }

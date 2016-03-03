@@ -42,7 +42,7 @@ ${matches[1] + matches[3]}
     for (let module of parsedData.env.modules) {
       let klass = (module.type.slice(0,1) === '$' ? 
                    module.type : `require("${module.type}")`);
-      out += `mods.push(new(${klass})(${JSON.stringify(module)}));\n`;
+      out += `new(${klass})(${JSON.stringify(module)});\n`;
     }
     let outFile = `${outputFolder}/${path.parse(file).name}.js`;
     fs.writeFileSync(outFile, out.replace(/\n\s*\n/gm,'\n'));
