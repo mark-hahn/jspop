@@ -5,9 +5,9 @@ var moment = require('moment');
   "use strict";
   let log;
   module.exports = {
-    log: log = msg => {
-      let line = `${moment().format().slice(0,-6).replace('T',' ')} popx ${msg}`;
-      console.log(line);
+    log: log = (...args)  => {
+      let line = `${moment().format().slice(0,-6).replace('T',' ')} popx`;
+      console.log(line, ...args);
     },
     error: msg => {
       log(`error: ${msg}`);

@@ -3,7 +3,7 @@ utils      = require('../compiler/utils');
 deepFreeze = require('deep-freeze');
 
 inNode        = null;
-wireValues    = {};
+wireValue     = {};
 reactsByWires = {};
 
 (_=>{
@@ -23,37 +23,43 @@ reactsByWires = {};
       }
       return inNode;
     }
-    set (pinName, value, data, isEvent) {
+    set (pinName, data, meta, isEvent) {
       let wireName = this.module.wireByPin[pinName];
       if (!wireName) return;
-      if (!isEvent && value === wireValues[wireName]) return;
-      value = deepFreeze(value);
+      if (!isEvent && data === wireValue[wireName].data) return;
+      data = deepFreeze(data);
+      meta = (typeof meta === 'object' ? meta : {});
+      meta.sentFrom = {module: this.module.name, pinName, wireName}; 
+      meta.isEvent = !!isEvent;
+      let value = {data, meta};
+      reactLoop: 
       for (let react of reactsByWires[wireName]) {
         let type = react.reactType;
         if (type === 'value' && isEvent || type === 'event' && !isEvent) continue;
         let other = react.module;
         let otherQueue = other.pinQueues[react.pinName];
-        data.isEvent = !!isEvent;
-        data.sentFrom = {module: this.module.name, pinName, wireName}; 
-        let pinQueueItem = deepFreeze(Object.assign({}, react, {value, data}));
-        if (!isEvent) {
-          wireValues[wireName] = value;
-          for (let i = 0; i < otherQueue.length; i++) 
-              if (!otherQueue[i].isEvent) otherQueue.splice(i, 1, pinQueueItem); return;
-        } 
-        otherQueue.push(pinQueueItem);
+        if (isEvent) meta.cb = react.cb;
+        else {
+          wireValue[wireName] = value;
+          for (value of otherQueue) if (typeof value === 'function') continue reactLoop;
+          value = cb;
+        }
+        otherQueue.push(value);
         other.totalQueueLen++;
         setTimeout(other._run.bind(other), 0);
       }
     }
-    emit (pinName, value, data) {
-      this.set(pinName, value, data, true);
+    emit (pinName, data, meta) {
+      this.set(pinName, data, meta, true);
     }
     get (pinName) {
       let constVal = this.module.constByPin[pinName];
       if (constVal !== undefined) return constVal;
       let wireName = this.module.wireByPin[pinName];
-      if (wireName) return wireValues[wireName];
+      if (wireName) return wireValue[wireName];
+    }
+    isPin (pinName) {
+      return !!this.module.wireByPin[pinName];
     }
     isInstancePin (pinName) {
       return (pinName[0] !== '$');
@@ -65,23 +71,68 @@ reactsByWires = {};
       return iPins; 
     }
     react (pinNames, reactType, cb) {
-      if (pinNames === '*') {
-        for (let pinName in this.module.wireByPin) this._addReact(pinName, reactType, cb);
-      } else {
-        let pinNameList = pinNames.split(/[\s,;:]/g);
-        for (let pinName of pinNameList) {
-          pinName = pinName.replace(/\s/g,'');
-          if(pinName) this._addReact(pinName, reactType, cb);
-        }
+      switch (pinNames) {
+        case '*':
+          for (let pinName in this.module.wireByPin) this._addReact(pinName, reactType, cb);
+          break;
+        case '**':
+          for (let wireName in wireValue)
+              reactsByWires[wireName].push({module: this, pinName: '$allWires', cb});
+          break;
+        default:
+          let pinNameList = pinNames.split(/[\s,;:]/g);
+          for (let pinName of pinNameList) {
+            pinName = pinName.replace(/\s/g,'');
+            if(pinName) this._addReact(pinName, reactType, cb);
+          }
+          break;
       }
     }
+    setFrozenAttr (frozenObj, sel, newVal) {
+      let cloneObj = (frozenObj, depth) => {
+        let clone;
+        if (typeof frozenObj !== 'object') clone = frozenObj;
+        else {
+          clone = (Array.isArray(frozenObj) ? [] : {});
+          if (sel === 'unshift' || sel === 'push') {
+            for (let key in frozenObj) clone.push(frozenObj[key]);
+            switch (sel) {
+              case 'unshift': clone.unshift(newVal); return clone;
+              case 'push':    clone.push(newVal);    return clone;
+            }
+          }
+          let selKey = sel[depth];
+          let foundSelKey = false;
+          for (let key in frozenObj) {
+            if (depth < sel.length && key === selKey) {
+              foundSelKey = true;
+              if (depth === sel.length-1) {
+                if (newVal !== undefined) clone[key] = newVal;
+                sel = [];
+                continue;
+              }
+              clone[key] = cloneObj(frozenObj[key], depth+1);
+            } else {
+              clone[key] = frozenObj[key];
+            }
+          }
+          if (!foundSelKey && newVal !== undefined) {
+            let val = newVal;
+            for (i = sel.length-1; i > depth; i--) {
+              let obj = {}; 
+              obj[sel[i]] = val;
+              val = obj;
+            }
+            clone[selKey] = val;
+            sel = [];
+          }
+        }
+        return clone;
+      };
+      return deepFreeze(cloneObj(frozenObj, 0));
+    }
     log (...args) {
-      msg = `Module ${this.module.name}: `;
-      for (let arg of args) {
-        if (typeof arg === 'object') msg += util.inspect(arg, {depth: null});
-        else msg += arg;
-      }
-      console.log(msg);
+      utils.log(this.module.name + ':', ...args);
     }
     _addReact (pinName, reactType, cb) {
       let wireName = this.module.wireByPin[pinName];
@@ -96,10 +147,17 @@ reactsByWires = {};
         let queue = this.pinQueues[pinName];
         let queueLen = queue.length;
         for (let i = 0; i < queueLen; i++) {
-          let pinQueueItem = queue.shift();
+          let entry = queue.shift();
           this.totalQueueLen--;
-          let value = (pinQueueItem.isEvent ? pinQueueItem.value : this.get(pinName));
-          try { pinQueueItem.cb.call(this, pinName, value, pinQueueItem.data); }
+          let value, cb;
+          if (typeof entry === 'function') {
+            value =  this.get(pinName);
+            cb = entry;
+          } else {
+            value = entry;
+            cb = entry.meta.cb;
+          }
+          try { cb.call(this, pinName, value.data, value.meta); }
           catch (err) { 
             this.log('Exception thrown:', err.message);
             if (err.fatal && Popx.inNode()) process.exit(1); 

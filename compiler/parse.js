@@ -28,9 +28,10 @@ var utils = require('./utils');
         if (pinVal === null || pinVal === undefined) {
           wireByPin[pinName] = pinName;
         } else if (Array.isArray(pinVal)) {
-          if (pinVal.length > 1 && pinVal[0] === 'file')
-              pinVal[0] = fs.readFileSync(pinVal[1], 'utf8');
-          constByPin[pinName] = pinVal[0];
+          if (pinVal.length > 1) { 
+            if (pinVal[0] === 'file') pinVal[0] = fs.readFileSync(pinVal[1], 'utf8');
+            else constByPin[pinName] = pinVal;
+          } else constByPin[pinName] = pinVal[0];
         } else {
           if (typeof pinVal !== 'string') utils.fatal(
               `pin value "${pinVal}" for pin ${pinName} in module ${modName} is not array or string.`);
