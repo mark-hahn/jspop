@@ -3,7 +3,7 @@ utils      = require('../compiler/utils');
 deepFreeze = require('deep-freeze');
 
 inNode        = null;
-wireValue     = {};
+valueByWire   = {};
 reactsByWires = {};
 
 (_=>{
@@ -26,7 +26,9 @@ reactsByWires = {};
     set (pinName, data, meta, isEvent) {
       let wireName = this.module.wireByPin[pinName];
       if (!wireName) return;
-      if (!isEvent && data === wireValue[wireName].data) return;
+      if (valueByWire[wireName] === undefined) 
+          valueByWire[wireName] = {data:undefined, meta:{}};
+      if (!isEvent && data === valueByWire[wireName].data) return;
       data = deepFreeze(data);
       meta = (typeof meta === 'object' ? meta : {});
       meta.sentFrom = {module: this.module.name, pinName, wireName}; 
@@ -38,13 +40,17 @@ reactsByWires = {};
         if (type === 'value' && isEvent || type === 'event' && !isEvent) continue;
         let other = react.module;
         let otherQueue = other.pinQueues[react.pinName];
-        if (isEvent) meta.cb = react.cb;
-        else {
-          wireValue[wireName] = value;
-          for (value of otherQueue) if (value === cb) continue reactLoop;
-          value = cb;
+        let queueItem;
+        if (isEvent) {
+          meta.cb = react.cb;
+          queueItem = value;
+        } else {
+          valueByWire[wireName] = value;
+          for (let otherQueueItem of otherQueue) 
+              if (otherQueueItem === react.cb) continue reactLoop;
+          queueItem = react.cb;
         }
-        otherQueue.push(value);
+        otherQueue.push(queueItem);
         other.totalQueueLen++;
         setTimeout(other._run.bind(other), 0);
       }
@@ -56,7 +62,7 @@ reactsByWires = {};
       let constVal = this.module.constByPin[pinName];
       if (constVal !== undefined) return constVal;
       let wireName = this.module.wireByPin[pinName];
-      if (wireName) return wireValue[wireName];
+      if (wireName) return valueByWire[wireName];
     }
     isPin (pinName) {
       return !!this.module.wireByPin[pinName];
@@ -68,15 +74,21 @@ reactsByWires = {};
       let iPins = [];
       for (let pinName in this.module.wireByPin) 
           if (this.isInstancePin(pinName)) iPins.push(pinName);
+      for (let pinName in this.module.constByPin) 
+          if (this.isInstancePin(pinName)) iPins.push(pinName);
       return iPins; 
     }
     react (pinNames, reactType, cb) {
       switch (pinNames) {
         case '*':
-          for (let pinName in this.module.wireByPin) this._addReact(pinName, reactType, cb);
+          for (let pinName in this.module.wireByPin) 
+              if(this.isInstancePin(pinName)) this._addReact(pinName, reactType, cb);
           break;
         case '**':
-          for (let wireName in wireValue)
+          for (let pinName in this.module.wireByPin) this._addReact(pinName, reactType, cb);
+          break;
+        case '***':
+          for (let wireName in valueByWire)
               reactsByWires[wireName].push({module: this, pinName: '$allWires', cb});
           break;
         default:
@@ -159,7 +171,7 @@ reactsByWires = {};
           }
           try { cb.call(this, pinName, value.data, value.meta); }
           catch (err) { 
-            this.log('Exception thrown:', err.message);
+            this.log('Exception thrown:', err.stack);
             if (err.fatal && Popx.inNode()) process.exit(1); 
           }
         }
