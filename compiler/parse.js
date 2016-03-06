@@ -17,7 +17,7 @@ var utils = require('./utils');
     
     for (let modName in doc.modules) {
       let moduleIn = doc.modules[modName];
-      let module = {name:modName, type: (moduleIn.$module ? moduleIn.$module[0] : modName)};
+      let module = {name:modName, type: (moduleIn.$module ? moduleIn.$module[0] : '$constant')};
       delete moduleIn.$module;
       modules.push(module);
       
@@ -25,6 +25,7 @@ var utils = require('./utils');
       let constByPin = {};
       for (let pinName in moduleIn) {
         let pinVal = moduleIn[pinName];
+        pinName = pinName.replace(/[><]/g, '');
         if (pinVal === null || pinVal === undefined) {
           wireByPin[pinName] = pinName;
         } else if (Array.isArray(pinVal)) {
@@ -37,7 +38,7 @@ var utils = require('./utils');
         } else {
           if (typeof pinVal !== 'string') utils.fatal(
               `pin value "${pinVal}" for pin ${pinName} in module ${modName} is not array or string.`);
-          if (/\W/.test(pinVal)) utils.fatal(
+          if (/[^0-9a-z><_]/i.test(pinVal)) utils.fatal(
               `wire name "${pinVal}" for pin ${pinName} in module ${modName} has invalid character`);
           wireByPin[pinName] = pinVal;
         }
@@ -45,7 +46,7 @@ var utils = require('./utils');
       module.wireByPin = wireByPin;
       module.constByPin = constByPin;
     }
-    return {project: doc.project, env: {modules}};
+    return {project: doc.module, env: {modules}};
   };
   
 })();

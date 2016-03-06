@@ -1,0 +1,19 @@
+
+# A popx minimal http server example
+# To run ...
+#   popx -c hello-world.popx
+#   node hello-world.js
+
+modules:
+  
+  httpServer:
+    $module: [$http]
+    $op:     [server]
+    $port:   [8081]
+    $req>:   httpReq
+    $res<:   httpRes
+
+  pageConstant:
+    $in<:    httpReq
+    $data:   [Hello World!]
+    $out>:   httpRes
