@@ -40,13 +40,14 @@ var utils = require('./utils');
                  constByPin[pinName] = fs.readFileSync(pinVal[1], 'utf8');
             else constByPin[pinName] = pinVal;
           } 
-            else constByPin[pinName] = pinVal[0];
+            else if (pinName !== '$module') constByPin[pinName] = pinVal[0];
         } else {
           if (typeof pinVal !== 'string') utils.fatal(
               `pin value "${pinVal}" for pin ${pinName} in module ${modName} is not array or string.`);
-          if (/[^0-9a-z><_]/i.test(pinVal)) utils.fatal(
+          let wireName = pinVal.replace(/[><]/g, '');
+          if (/[^0-9a-z_]/i.test(wireName)) utils.fatal(
               `wire name "${pinVal}" for pin ${pinName} in module ${modName} has invalid character`);
-          wireByPin[pinName] = pinVal;
+          wireByPin[pinName] = wireName;
         }
       }
       module.wireByPin  = wireByPin;
