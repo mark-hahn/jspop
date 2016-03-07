@@ -29,8 +29,8 @@ reactsByWires = {};
       if (valueByWire[wireName] === undefined) 
           valueByWire[wireName] = {data:undefined, meta:{}};
       if (!isEvent && data === valueByWire[wireName].data) return;
-      data = deepFreeze(data);
-      meta = (typeof meta === 'object' ? meta : {});
+      if (data && typeof data === 'object') data = deepFreeze(data);
+      meta = (meta && typeof meta === 'object' ? meta : {});
       meta.sentFrom = {module: this.module.name, pinName, wireName}; 
       meta.isEvent = !!isEvent;
       let value = {data, meta};
@@ -65,7 +65,7 @@ reactsByWires = {};
       if (wireName) return valueByWire[wireName];
     }
     isPin (pinName) {
-      return !!this.module.wireByPin[pinName];
+      return (this.module.wireByPin[pinName] !== undefined);
     }
     isInstancePin (pinName) {
       return (pinName[0] !== '$');
@@ -79,6 +79,10 @@ reactsByWires = {};
       return iPins; 
     }
     react (pinNames, reactType, cb) {
+      if (typeof reactType === 'function') {
+        cb = reactType;
+        reactType =null;
+      }
       switch (pinNames) {
         case '*':
           for (let pinName in this.module.wireByPin) 
@@ -103,7 +107,7 @@ reactsByWires = {};
     setFrozenAttr (frozenObj, sel, newVal) {
       let cloneObj = (frozenObj, depth) => {
         let clone;
-        if (typeof frozenObj !== 'object') clone = frozenObj;
+        if (!frozenObj || typeof frozenObj !== 'object') clone = frozenObj;
         else {
           clone = (Array.isArray(frozenObj) ? [] : {});
           if (sel === 'unshift' || sel === 'push') {
@@ -141,7 +145,9 @@ reactsByWires = {};
         }
         return clone;
       };
-      return deepFreeze(cloneObj(frozenObj, 0));
+      let data = cloneObj(frozenObj, 0);
+      if (data && typeof data === 'object') data = deepFreeze(data);
+      return data;
     }
     log (...args) {
       utils.log(this.module.name + ':', ...args);

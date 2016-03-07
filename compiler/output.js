@@ -28,7 +28,7 @@ ${body}
     let stdlibModulesIncluded = {};
     let outputFolder = opts.outputFolder || '.';
     
-    var out = `/*${util.inspect(project)}*/\n\nvar Popx = require('popx');\n`;
+    var out = `\nvar Popx = require('popx');\n`;
     for (let module of parsedData.env.modules) {
       if (module.type.slice(0,1) === '$' && !stdlibModulesIncluded[module.type]) {
         out += (addBoilerPlate(module.type, stdlib(module.type)));

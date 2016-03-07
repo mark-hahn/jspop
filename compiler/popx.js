@@ -1,5 +1,6 @@
 
 var fs         = require('fs');
+var path       = require('path');
 var browserify = require('browserify');
 var opts       = require('./args');
 var parse      = require('./parse');
@@ -9,10 +10,7 @@ var utils      = require('./utils');
 (_=>{
   "use strict";
   
-  let file = opts.args[0], source;
-  try { source = fs.readFileSync(file, 'utf8'); }
-  catch (e) {utils.fatal(`cannot read file ${file}`);}
-  let parsedData = parse(file, source);
+  let parsedData = parse(opts.args[0]);
   let outFile = output(file, parsedData);
   if (opts.browserify) {
     let browserifyOpts = {};

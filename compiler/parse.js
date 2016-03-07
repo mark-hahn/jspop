@@ -1,34 +1,44 @@
 
 var util  = require('util');
+var path  = require('path');
 var yaml  = require('js-yaml');
 var utils = require('./utils');
 
 (_=>{
   'use strict';
-  
-  module.exports = (file, source) => {
-    let doc;
-    try { doc = yaml.load(source); }
-    catch (e) { utils.fatal(`syntax (yaml): ${file}, ${e.message}`); }    
-    // console.log(util.inspect(doc, {depth:null}));
-
-    let modules  = [];
-    if (!doc.modules) utils.fatal(`no modules found in file ${file}`);
+  let parse;
+  let docModsCache = {};
+  let TopWires = {};
+  module.exports = parse = (file, parent) => {
     
-    for (let modName in doc.modules) {
-      let moduleIn = doc.modules[modName];
-      let module = {name:modName, type: (moduleIn.$module ? moduleIn.$module[0] : '$constant')};
-      delete moduleIn.$module;
-      modules.push(module);
-      
+    // debug
+    parent = {wireByPin: {$taskList: 'parentTaskList'}, wirePath: 'parentWire'};
+    
+    file = path.normalize(file);
+    let docModules;
+    if (docModsCache[file]) docModules = docModsCache[file];
+    else {
+      let source;
+      try { source = fs.readFileSync(file, 'utf8'); }
+      catch (e) {utils.fatal(`cannot read file ${file}`);}
+      let doc;
+      try { doc = yaml.load(source); }
+      catch (e) { utils.fatal(`syntax (yaml): ${file}, ${e.message}`); } 
+      docModules = doc.modules;
+      if (!docModules) utils.fatal(`no modules found in file ${file}`);
+      docModsCache[file] = docModules;
+    } 
+    let modules  = [];
+    let ioModule;
+    for (let modName in docModules) {
+      let moduleIn = docModules[modName];
+      let module = {name: modName, type: (moduleIn.$module ? moduleIn.$module[0] : '$constant')};
       let wireByPin = {};
       let constByPin = {};
       for (let pinName in moduleIn) {
         let pinVal = moduleIn[pinName];
         pinName = pinName.replace(/[><]/g, '');
-        if (pinVal === null || pinVal === undefined) {
-          wireByPin[pinName] = pinName;
-        } else if (Array.isArray(pinVal)) {
+        if (Array.isArray(pinVal)) {
           if (pinVal.length > 1) { 
             if (pinVal[0] === 'file') 
                  constByPin[pinName] = fs.readFileSync(pinVal[1], 'utf8');
@@ -45,8 +55,27 @@ var utils = require('./utils');
       }
       module.wireByPin = wireByPin;
       module.constByPin = constByPin;
+      if (module.type === '$IO') ioModule = module;
+      else modules.push(module);
     }
-    return {project: doc.module, env: {modules}};
+    if (parent) {
+      if (!ioModule) utils.fatal(`no $IO module found in submodule ${file}`);
+      let parentByLocalWireName = {};
+      for (let pinName in ioModule.wireByPin) {
+          if (parent.wireByPin[pinName]) {
+          let wireName = ioModule.wireByPin[pinName];
+          parentByLocalWireName[wireName] = parent.wireByPin[pinName];
+        }
+      }
+      for (let module of modules) {
+        for (let pinName in module.wireByPin) {
+          let wireName = module.wireByPin[pinName];
+          module.wireByPin[pinName] = 
+              parentByLocalWireName[wireName] || parent.wirePath + ':' + wireName;
+        }
+      }
+    }
+    utils.log(modules);
+    return {modules};
   };
-  
 })();

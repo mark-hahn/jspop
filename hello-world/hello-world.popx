@@ -13,7 +13,15 @@ modules:
     $req>:   httpReq
     $res<:   httpRes
 
+# this is not triggered
   pageConstant:
     $in<:    httpReq
     $data:   [Hello World!]
     $out>:   httpRes
+
+# this is triggered twice
+  log:
+    $module: [$log]
+    httpReq: httpReq    
+    httpRes: httpRes
+    
