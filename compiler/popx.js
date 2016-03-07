@@ -10,8 +10,9 @@ var utils      = require('./utils');
 (_=>{
   "use strict";
   
-  let parsedData = parse(opts.args[0]);
-  let outFile = output(file, parsedData);
+  let file = opts.args[0];
+  let parsedModules = parse(file);
+  let outFile = output(file, parsedModules);
   if (opts.browserify) {
     let browserifyOpts = {};
     if (opts.browserifyMap) browserifyOpts.debug = true;

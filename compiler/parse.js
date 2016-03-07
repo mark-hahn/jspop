@@ -10,10 +10,6 @@ var utils = require('./utils');
   let docModsCache = {};
   let TopWires = {};
   module.exports = parse = (file, parent) => {
-    
-    // debug
-    parent = {wireByPin: {$taskList: 'parentTaskList'}, wirePath: 'parentWire'};
-    
     file = path.normalize(file);
     let docModules;
     if (docModsCache[file]) docModules = docModsCache[file];
@@ -53,16 +49,28 @@ var utils = require('./utils');
           wireByPin[pinName] = pinVal;
         }
       }
-      module.wireByPin = wireByPin;
+      module.wireByPin  = wireByPin;
       module.constByPin = constByPin;
+      
+      let subModFile;
+      let stdLib = (module.name[0] === '$');
       if (module.type === '$IO') ioModule = module;
-      else modules.push(module);
+      else if (!stdLib && module.type.slice(-5).toLowerCase() === '.popx')
+          subModFile = module.type;
+      else if (!stdLib && fs.existsSync(module.type + '.popx'))
+          subModFile = module.type + '.popx';
+      if (subModFile) {
+        let wirePath = (parent ? parent.wirePath + ':' : '') + module.name;
+        let subMods = parse(subModFile, {wireByPin, wirePath});
+        modules = modules.concat(subMods);
+      } else if (module.type !== '$IO')
+          modules.push(module);
     }
     if (parent) {
       if (!ioModule) utils.fatal(`no $IO module found in submodule ${file}`);
       let parentByLocalWireName = {};
       for (let pinName in ioModule.wireByPin) {
-          if (parent.wireByPin[pinName]) {
+        if (parent.wireByPin[pinName]) {
           let wireName = ioModule.wireByPin[pinName];
           parentByLocalWireName[wireName] = parent.wireByPin[pinName];
         }
@@ -75,7 +83,7 @@ var utils = require('./utils');
         }
       }
     }
-    utils.log(modules);
-    return {modules};
+    // utils.log(modules);
+    return modules;
   };
 })();

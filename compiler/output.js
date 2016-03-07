@@ -24,18 +24,18 @@ ${body}
 })();
 `; });
 
-  module.exports = (file, parsedData) => {
+  module.exports = (file, parsedModules) => {
     let stdlibModulesIncluded = {};
     let outputFolder = opts.outputFolder || '.';
     
     var out = `\nvar Popx = require('popx');\n`;
-    for (let module of parsedData.env.modules) {
+    for (let module of parsedModules) {
       if (module.type.slice(0,1) === '$' && !stdlibModulesIncluded[module.type]) {
         out += (addBoilerPlate(module.type, stdlib(module.type)));
         stdlibModulesIncluded[module.type] = true;
       }
     }
-    for (let module of parsedData.env.modules) {
+    for (let module of parsedModules) {
       let klass = (module.type.slice(0,1) === '$' ? 
                    module.type : `require("${module.type}")`);
       out += `new(${klass})(${JSON.stringify(module)});\n`;
